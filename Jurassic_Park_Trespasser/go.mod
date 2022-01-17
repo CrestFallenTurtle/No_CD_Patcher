@@ -1,4 +1,4 @@
-module Jurassic_Park_Trespasser
+module github.com/s9rA16Bf4/No_CD_Cracks/Jurassic_Park_Trespasser
 
 go 1.17
 
