@@ -1,4 +1,4 @@
-module trespasser
+module Jurassic_Park_Trespasser
 
 go 1.17
 
