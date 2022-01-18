@@ -9,15 +9,31 @@ import (
 	"github.com/s9rA16Bf4/notify_handler/go/notify"
 )
 
-var file_content []string
+type file_t struct {
+	gut  []string // Contains everything in the target file
+	name string   // File name
+	path string   // File path
+}
 
-func Begin(file string) {
-	read_file(file)
-	i := strings.LastIndex(file, "/")
-	file_backup := file[i+1:] + "_backup"
+var c_file file_t
+
+const (
+	EXE_NAME   = "trespass.exe" // Target exe name
+	EXE_BACKUP = EXE_NAME + "_backup"
+)
+
+func Begin_rollback(file_path string) {
+
+}
+
+func Begin_patch(file_path string) {
+	c_file.name = EXE_NAME
+	c_file.path = file_path
+
+	read_file()
 
 	notify.Inform("Phase 1: Creating a backup of the target")
-	create_backup(file, file_backup)
+	create_backup()
 
 	notify.Inform("Phase 2: Patching the requirement to have a cd inserted.")
 	patch_out_cd()
@@ -26,49 +42,49 @@ func Begin(file string) {
 	patch_out_cd_error()
 
 	notify.Inform("Phase 4: Saving edits to the binary file")
-	save_exe(file)
+	save_exe()
 
-	notify.Inform("Phase 5: Done. The result has been written to '" + file + "' and a backup, '" + file_backup + "', has been created if you would like to roll back the changes")
+	notify.Inform("Phase 5: Done. The result has been written to '" + EXE_NAME + "' and a backup, '" + EXE_BACKUP + "', has been created in the local directory if you would like to roll back the changes")
 }
 
-func read_file(file string) {
-	if strings.Contains(file, ".exe") {
-		out, err := os.Open(file)
+func read_file() {
+	if strings.Contains(c_file.path, EXE_NAME) { // This is what the exe is called
+		out, err := os.Open(c_file.path)
 		if err != nil {
 			notify.Error(err.Error(), "patcher.read_file()")
 		}
-		file_content = make([]string, 0)
+		c_file.gut = make([]string, 0)
 		local := make([]byte, 12)
 		for err != io.EOF {
 			_, err = out.Read(local)
 			temp := hex.EncodeToString(local) // This makes it a hella lot easier to handle
-			file_content = append(file_content, temp)
+			c_file.gut = append(c_file.gut, temp)
 		}
 		out.Close()
 	} else {
-		notify.Error("The provided file '"+file+"' doesn't seem to be an .exe", "patcher.read_file()")
+		notify.Error("The provided file '"+c_file.path+"' doesn't seem to the target exe '"+EXE_NAME+"'", "patcher.read_file()")
 	}
 }
 
-func create_backup(file string, backup_file_name string) {
-	out, err := os.Create(backup_file_name)
+func create_backup() {
+	dst, err := os.Create(EXE_BACKUP) // Will create it in the local directory
 	if err != nil {
 		notify.Error(err.Error(), "patcher.create_backup()")
 	}
-	in, err := os.Open(file)
+	src, err := os.Open(c_file.path) // Open the file
 	if err != nil {
 		notify.Error(err.Error(), "patcher.create_backup()")
 	}
-	io.Copy(out, in)
-	in.Close()
-	out.Close()
+	io.Copy(dst, src) // Copy everything from the src to the dst
+	src.Close()
+	dst.Close()
 }
 
 func patch_out_cd() {
 	// We need to replace `OF 85` to `OF 84`, issue is that this is most likely not the only case of this opcode in the exe file
-	for i, line := range file_content {
+	for i, line := range c_file.gut {
 		if line == "ff0f85a60000008b1db05064" {
-			file_content[i] = "ff0f84a60000008b1db05064" // Equals jump if equal
+			c_file.gut[i] = "ff0f84a60000008b1db05064" // Equals jump if equal
 			break
 		}
 	}
@@ -78,11 +94,11 @@ func patch_out_cd_error() {
 
 }
 
-func save_exe(file string) {
-	out, _ := os.Create(file)
-	for _, line := range file_content {
-		arr, _ := hex.DecodeString(line)
-		out.Write(arr)
+func save_exe() {
+	dst, _ := os.Create(c_file.name) // Creates our modified exe
+	for _, line := range c_file.gut {
+		arr, _ := hex.DecodeString(line) // Write all the content
+		dst.Write(arr)
 	}
-	out.Close()
+	dst.Close()
 }
