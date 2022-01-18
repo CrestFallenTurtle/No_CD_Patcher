@@ -4,8 +4,8 @@ import (
 	"os"
 
 	arg "github.com/s9rA16Bf4/ArgumentParser/go/arguments"
+	patcher "github.com/s9rA16Bf4/No_CD_Cracks/Jurassic_Park_Trespasser/utility/patcher"
 	"github.com/s9rA16Bf4/notify_handler/go/notify"
-	//"github.com/s9rA16Bf4/No_CD_Cracks/Jurassic_Park_Trespasser/utility/patcher"
 )
 
 func main() {
@@ -22,7 +22,7 @@ func main() {
 			if arg.Argument_check("-x") {
 				file = arg.Argument_get("-x")
 			}
-			patcher.read_file(file)
+			patcher.Begin(file)
 		}
 
 	} else {
