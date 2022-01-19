@@ -23,7 +23,23 @@ const (
 )
 
 func Begin_rollback(file_path string) {
+	c_file.name = EXE_NAME
+	c_file.path = file_path
+	read_file()
 
+	notify.Inform("Phase 1: Creating a backup of the target")
+	create_backup()
+
+	notify.Inform("Phase 2: Removes the no-cd patch")
+	patch_out_cd(true)
+
+	notify.Inform("Phase 3: Removes the patch for the error that occurs")
+	patch_out_cd_error(true)
+
+	notify.Inform("Phase 4: Saving edits to the binary file")
+	save_exe()
+
+	notify.Inform("Phase 5: Done. The result has been written to '" + EXE_NAME + "' and a backup, '" + EXE_BACKUP + "', has been created in the local directory if you would like to roll back the changes")
 }
 
 func Begin_patch(file_path string) {
@@ -36,10 +52,10 @@ func Begin_patch(file_path string) {
 	create_backup()
 
 	notify.Inform("Phase 2: Patching the requirement to have a cd inserted.")
-	patch_out_cd()
+	patch_out_cd(false)
 
 	notify.Inform("Phase 3: Patching an error that would occur if the cd is not present.")
-	patch_out_cd_error()
+	patch_out_cd_error(false)
 
 	notify.Inform("Phase 4: Saving edits to the binary file")
 	save_exe()
@@ -55,8 +71,11 @@ func read_file() {
 		}
 		c_file.gut = make([]string, 0)
 		local := make([]byte, 12)
-		for err != io.EOF {
+		for {
 			_, err = out.Read(local)
+			if err == io.EOF {
+				break
+			}
 			temp := hex.EncodeToString(local) // This makes it a hella lot easier to handle
 			c_file.gut = append(c_file.gut, temp)
 		}
@@ -80,18 +99,30 @@ func create_backup() {
 	dst.Close()
 }
 
-func patch_out_cd() {
-	// We need to replace `OF 85` to `OF 84`, issue is that this is most likely not the only case of this opcode in the exe file
-	for i, line := range c_file.gut {
-		if line == "ff0f85a60000008b1db05064" {
-			c_file.gut[i] = "ff0f84a60000008b1db05064" // Equals jump if equal
-			break
+func patch_out_cd(reverse_work bool) {
+	if !reverse_work {
+		for i, line := range c_file.gut {
+			if line == "ff0f85a60000008b1db05064" {
+				c_file.gut[i] = "ff0f84a60000008b1db05064" // Equals jump if equal
+				break
+			}
+		}
+	} else {
+		for i, line := range c_file.gut {
+			if line == "ff0f84a60000008b1db05064" {
+				c_file.gut[i] = "ff0f85a60000008b1db05064"
+				break
+			}
 		}
 	}
 }
 
-func patch_out_cd_error() {
+func patch_out_cd_error(reverse_work bool) {
+	if !reverse_work {
 
+	} else {
+
+	}
 }
 
 func save_exe() {
