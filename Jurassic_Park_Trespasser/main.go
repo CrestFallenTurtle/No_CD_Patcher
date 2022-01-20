@@ -28,7 +28,7 @@ func main() {
 			}
 
 			if arg.Argument_check("-s") { // Patch exe
-				path_to_exe = arg.Argument_get("-s")
+				path_to_smks = arg.Argument_get("-s")
 			} else {
 				notify.Error("No folder was provided", "main.main()")
 			}
