@@ -1,6 +1,6 @@
 
 
-OUTPUT := trespasser_patcher
+OUTPUT := trespasser_patcher.exe
 
 compile:
 	go build -o $(OUTPUT) .
