@@ -21,7 +21,7 @@ My observation leads to that if we would try to replace all the codes were the p
 A lot simpler solution was found by observing the games registry, located at `HKEY_LOCAL_MACHINE\SOFTWARE\WOW6432Node\DreamWorks Interactive\Trespasser`<br>
 ![Picture showing windows regedit](https://github.com/s9rA16Bf4/No_CD_Cracks/blob/main/pictures/trespasser/pic2.png)
 
-What we see in the keyvalue `Data Drive` is simply where the system will start to look for the folders `data/menu` which would contain the four `.smk`, and this is the final part of the puzzel to crack for a no-cd requirement. The solution that I'll go with and the program aswell is to replace the the keyvalue from `D:\` to `C:\Program Files (x86)\DreamWorks Interactive\Trespasser\` but also creating the directories `data/menu` which will contain the necessary files.
+What we see in the keyvalue `Data Drive` is simply where the system will start to look for the folders `data/menu` which would contain the four `.smk`, and this is the final part of the puzzel to crack for a no-cd requirement. The solution that I'll go with and the program aswell is to replace the the keyvalue from `D:\` to `C:\Program Files (x86)\DreamWorks Interactive\Trespasser\` but also creating the directories `data/menu` in the Trespasser directory which in turn contains the necessary files.
 
 ![Picture showing windows regedit but with modified values](https://github.com/s9rA16Bf4/No_CD_Cracks/blob/main/pictures/trespasser/pic3.png)<br>
 
