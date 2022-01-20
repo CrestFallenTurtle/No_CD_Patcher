@@ -27,3 +27,8 @@ What we see in the keyvalue `Data Drive` is simply where the system will start t
 
 ### For the program to work
 For the program to work, you will need to pass a valid .exe file to verify ownage of the game (how you get it is up to you) but you will also be required to pass a folder containing the necessary `.smk` files. The program will then handle everything else when it comes to modify the keyvalue in regedit. It will also be required to run the program with escalated privileges.
+
+### Dependencies
+The dependencies for this project is 
+1. Registry - `go get "golang.org/x/sys/windows/registry"`
+2. Notify - `go get "github.com/s9rA16Bf4/notify_handler/go/notify"`
