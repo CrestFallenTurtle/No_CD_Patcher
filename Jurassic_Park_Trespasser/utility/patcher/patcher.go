@@ -1,7 +1,7 @@
 package patcher
 
 import (
-	"crypto/sha256"
+	"crypto/sha512"
 	"encoding/hex"
 	"io"
 	"os"
@@ -78,7 +78,7 @@ func internal_hash(path_to_file string) string {
 		notify.Error(err.Error(), "patcher.internal_hash")
 	}
 	buf := make([]byte, exe_size.Size())
-	hash := sha256.New()
+	hash := sha512.New()
 	for {
 		roof, err := exe.Read(buf)
 		if err == io.EOF || err != nil {
@@ -123,16 +123,16 @@ func check_smk() {
 		switch file.Name() {
 		case "credits.smk":
 			c_file.path_to_credits = c_file.path_to_folder + "credits.smk"
-			hash_smk["credits.smk"] = internal_hash(file.Name())
+			hash_smk["credits.smk"] = internal_hash(c_file.path_to_folder + file.Name())
 		case "newgame.smk":
 			c_file.path_to_newgame = c_file.path_to_folder + "newgame.smk"
-			hash_smk["newgame.smk"] = internal_hash(file.Name())
+			hash_smk["newgame.smk"] = internal_hash(c_file.path_to_folder + file.Name())
 		case "tpassintro.smk":
 			c_file.path_to_tpassintro = c_file.path_to_folder + "tpassintro.smk"
-			hash_smk["tpassintro.smk"] = internal_hash(file.Name())
+			hash_smk["tpassintro.smk"] = internal_hash(c_file.path_to_folder + file.Name())
 		case "win.smk":
 			c_file.path_to_win = c_file.path_to_folder + "win.smk"
-			hash_smk["win.smk"] = internal_hash(file.Name())
+			hash_smk["win.smk"] = internal_hash(c_file.path_to_folder + file.Name())
 		}
 	}
 	if hash_smk["credits.smk"] != CREDITS_HASH ||

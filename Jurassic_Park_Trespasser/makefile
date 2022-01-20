@@ -1,5 +1,3 @@
-
-
 OUTPUT := trespasser_patcher.exe
 
 compile:
