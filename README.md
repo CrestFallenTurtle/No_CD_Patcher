@@ -1,6 +1,9 @@
 # No CD Patcher
+There has been too many times were crappy CD-readers successfully destroy one of our valuable games.
+<b>This has to stop.</b><br>
 
-The goal with these smaller projects found in the repository is patch out the requirement for a cd when running those games.<br>
+That's where this project comes into play, the goal is to patch out the requirement for a CD to be present when running certain games.
+
 The point will never be to distribute cracked `.exe` files, but in rather produce a program that can patch it out for you if you meet the requirements set by each project.
 
 ### Patchers that currently exist
