@@ -3,13 +3,12 @@ package patcher
 import (
 	"crypto/sha512"
 	"encoding/hex"
+	"github.com/s9rA16Bf4/notify_handler/go/notify"
+	"golang.org/x/sys/windows/registry"
 	"io"
 	"os"
 	"runtime"
 	"strings"
-
-	"github.com/s9rA16Bf4/notify_handler/go/notify"
-	"golang.org/x/sys/windows/registry"
 )
 
 type file_t struct {
@@ -20,6 +19,7 @@ type file_t struct {
 	path_to_newgame    string
 	path_to_tpassintro string
 	path_to_win        string
+	path_to_install    string // Path to our local installation
 }
 
 var c_file file_t
@@ -38,7 +38,8 @@ func Begin_patch(file_path_exe string, file_path_smks string) {
 		notify.Error("This tool works only on windows", "patcher.Begin_patch")
 	}
 	c_file.name = EXE_NAME
-	c_file.path_to_exe = file_path_exe
+	c_file.path_to_exe = file_path_exe // This should be be the local path to the installation
+	c_file.path_to_install = extract_install_path(c_file.path_to_exe)
 	c_file.path_to_folder = file_path_smks
 
 	notify.Inform("[Phase 1] Checking if target exe is correct")
@@ -66,6 +67,21 @@ func Begin_patch(file_path_exe string, file_path_smks string) {
 	regedit()
 
 	notify.Inform("All done over here, enjoy over a hot cup of coffee or tea")
+}
+
+func extract_install_path(path string) string {
+	toReturn := ""
+	temp := ""
+
+	for _, char := range path {
+		if string(char) == "/" {
+			toReturn += temp
+			temp = ""
+		}
+		temp += string(char)
+	}
+
+	return toReturn + "/"
 }
 
 func internal_hash(path_to_file string) string {
@@ -144,14 +160,16 @@ func check_smk() {
 }
 
 func create_dir() {
-	err := os.MkdirAll("C:\\Program Files (x86)\\DreamWorks Interactive\\Trespasser\\data\\menu", 0700)
+	path := c_file.path_to_install + "\\data\\menu"
+
+	err := os.MkdirAll(path, 0700)
 	if err != nil {
 		notify.Error(err.Error(), "patcher.create_dir()")
 	}
 }
 
 func copy_credits() {
-	dst, err := os.Create("C:\\Program Files (x86)\\DreamWorks Interactive\\Trespasser\\data\\menu\\credits.smk")
+	dst, err := os.Create(c_file.path_to_install + "\\data\\menu\\credits.smk")
 	if err != nil {
 		notify.Error(err.Error(), "patcher.copy_credits()")
 	}
@@ -164,7 +182,7 @@ func copy_credits() {
 	src.Close()
 }
 func copy_newgame() {
-	dst, err := os.Create("C:\\Program Files (x86)\\DreamWorks Interactive\\Trespasser\\data\\menu\\newgame.smk")
+	dst, err := os.Create(c_file.path_to_install + "\\data\\menu\\newgame.smk")
 	if err != nil {
 		notify.Error(err.Error(), "patcher.copy_newgame()")
 	}
@@ -177,7 +195,7 @@ func copy_newgame() {
 	src.Close()
 }
 func copy_tpassintro() {
-	dst, err := os.Create("C:\\Program Files (x86)\\DreamWorks Interactive\\Trespasser\\data\\menu\\tpassintro.smk")
+	dst, err := os.Create(c_file.path_to_install + "\\data\\menu\\tpassintro.smk")
 	if err != nil {
 		notify.Error(err.Error(), "patcher.copy_tpassintro()")
 	}
@@ -190,7 +208,7 @@ func copy_tpassintro() {
 	src.Close()
 }
 func copy_win() {
-	dst, err := os.Create("C:\\Program Files (x86)\\DreamWorks Interactive\\Trespasser\\data\\menu\\win.smk")
+	dst, err := os.Create(c_file.path_to_install + "\\data\\menu\\win.smk")
 	if err != nil {
 		notify.Error(err.Error(), "patcher.copy_win()")
 	}
@@ -205,10 +223,16 @@ func copy_win() {
 
 func regedit() {
 	reg, err := registry.OpenKey(registry.LOCAL_MACHINE, `SOFTWARE\WOW6432Node\DreamWorks Interactive\Trespasser`, registry.WRITE)
+
 	if err != nil {
-		notify.Error(err.Error(), "patcher.regedit")
+		notify.Inform("Utilizing alternative path `SOFTWARE\\DreamWorks Interactive\\Trespasser`")
+		reg, err = registry.OpenKey(registry.LOCAL_MACHINE, `SOFTWARE\\DreamWorks Interactive\\Trespasser`, registry.WRITE) // Alternative path
+		if err != nil {
+			notify.Error(err.Error(), "patcher.regedit")
+		}
 	}
-	err = reg.SetStringValue("Data Drive", "C:\\Program Files (x86)\\DreamWorks Interactive\\Trespasser\\")
+
+	err = reg.SetStringValue("Data Drive", c_file.path_to_install+"\\")
 	if err != nil {
 		notify.Error(err.Error(), "patcher.regedit")
 	}
