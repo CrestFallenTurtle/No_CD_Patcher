@@ -12,6 +12,7 @@ func main() {
 	arg.Argument_add("--help", "-h", false, "Shows all available arguments and their purpose", []string{"NULL"})
 	arg.Argument_add("--exe", "-x", true, "Path to Trespasser exe [REQUIRED]", []string{"NULL"})
 	arg.Argument_add("--smks", "-s", true, "Path to a folder containing the four smk's [REQUIRED]", []string{"NULL"})
+	arg.Argument_add("--levels", "-l", true, "Path to all the different levels and other materials [REQUIRED]", []string{"NULL"})
 	arg.Argument_parse()
 
 	if len(os.Args) > 1 {
@@ -20,6 +21,7 @@ func main() {
 		} else {
 			var path_to_exe string
 			var path_to_smks string
+			var path_to_lvl string
 
 			if arg.Argument_check("-x") { // Patch exe
 				path_to_exe = arg.Argument_get("-x")
@@ -33,7 +35,13 @@ func main() {
 				notify.Error("No folder was provided", "main.main()")
 			}
 
-			patcher.Begin_patch(path_to_exe, path_to_smks)
+			if arg.Argument_check("-l") {
+				path_to_lvl = arg.Argument_get("-l")
+			} else {
+				notify.Error("Levels were not provided", "main.main()")
+			}
+
+			patcher.Begin_patch(path_to_exe, path_to_smks, path_to_lvl)
 		}
 	} else {
 		notify.Error("No argument was provided, run '--help'/'-h' to have a look at the arguments available", "main.main()")

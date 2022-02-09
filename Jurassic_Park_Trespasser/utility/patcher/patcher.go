@@ -3,23 +3,24 @@ package patcher
 import (
 	"crypto/sha512"
 	"encoding/hex"
-	"github.com/s9rA16Bf4/notify_handler/go/notify"
-	"golang.org/x/sys/windows/registry"
 	"io"
 	"os"
 	"runtime"
 	"strings"
+
+	"github.com/s9rA16Bf4/notify_handler/go/notify"
+	"golang.org/x/sys/windows/registry"
 )
 
 type file_t struct {
 	name               string // File name
 	path_to_exe        string // File path
-	path_to_folder     string // Folder path
+	path_to_smks       string // Folder path
 	path_to_credits    string
 	path_to_newgame    string
 	path_to_tpassintro string
 	path_to_win        string
-	path_to_install    string // Path to our local installation
+	path_to_other      string // We need to copy about 50 other files..
 }
 
 var c_file file_t
@@ -33,14 +34,14 @@ const (
 	WIN_HASH        = "2f0fb246948b1cbeec818459ba3fbc4ea942a2450a09f23f3bd6ea10ee4f1aa0d764e2afa561343cc1f7c7031e0ebe61e5bdbfe984d4b5f9992d0f6f5ba11499"
 )
 
-func Begin_patch(file_path_exe string, file_path_smks string) {
+func Begin_patch(file_path_exe string, file_path_smks string, file_path_other string) {
 	if runtime.GOOS != "windows" {
 		notify.Error("This tool works only on windows", "patcher.Begin_patch")
 	}
 	c_file.name = EXE_NAME
 	c_file.path_to_exe = file_path_exe // This should be be the local path to the installation
-	c_file.path_to_install = extract_install_path(c_file.path_to_exe)
-	c_file.path_to_folder = file_path_smks
+	c_file.path_to_smks = file_path_smks
+	c_file.path_to_other = file_path_other
 
 	notify.Inform("[Phase 1] Checking if target exe is correct")
 	check_exe()
@@ -63,25 +64,13 @@ func Begin_patch(file_path_exe string, file_path_smks string) {
 	notify.Inform("[Phase 7] Copying 'win.smk'")
 	copy_win()
 
-	notify.Inform("[Phase 8] Changing key value in regedit")
+	notify.Inform("[Phase 8] Copying other necessary files")
+	copy_other()
+
+	notify.Inform("[Phase 9] Changing key value in regedit")
 	regedit()
 
 	notify.Inform("All done over here, enjoy over a hot cup of coffee or tea")
-}
-
-func extract_install_path(path string) string {
-	toReturn := ""
-	temp := ""
-
-	for _, char := range path {
-		if string(char) == "/" {
-			toReturn += temp
-			temp = ""
-		}
-		temp += string(char)
-	}
-
-	return toReturn + "/"
 }
 
 func internal_hash(path_to_file string) string {
@@ -121,7 +110,7 @@ func check_exe() {
 }
 
 func check_smk() {
-	folder, err := os.Open(c_file.path_to_folder)
+	folder, err := os.Open(c_file.path_to_smks)
 	if err != nil {
 		notify.Error(err.Error(), "patcher.check_smk()")
 	}
@@ -138,17 +127,17 @@ func check_smk() {
 	for _, file := range files {
 		switch file.Name() {
 		case "credits.smk":
-			c_file.path_to_credits = c_file.path_to_folder + "credits.smk"
-			hash_smk["credits.smk"] = internal_hash(c_file.path_to_folder + file.Name())
+			c_file.path_to_credits = c_file.path_to_smks + "credits.smk"
+			hash_smk["credits.smk"] = internal_hash(c_file.path_to_smks + file.Name())
 		case "newgame.smk":
-			c_file.path_to_newgame = c_file.path_to_folder + "newgame.smk"
-			hash_smk["newgame.smk"] = internal_hash(c_file.path_to_folder + file.Name())
+			c_file.path_to_newgame = c_file.path_to_smks + "newgame.smk"
+			hash_smk["newgame.smk"] = internal_hash(c_file.path_to_smks + file.Name())
 		case "tpassintro.smk":
-			c_file.path_to_tpassintro = c_file.path_to_folder + "tpassintro.smk"
-			hash_smk["tpassintro.smk"] = internal_hash(c_file.path_to_folder + file.Name())
+			c_file.path_to_tpassintro = c_file.path_to_smks + "tpassintro.smk"
+			hash_smk["tpassintro.smk"] = internal_hash(c_file.path_to_smks + file.Name())
 		case "win.smk":
-			c_file.path_to_win = c_file.path_to_folder + "win.smk"
-			hash_smk["win.smk"] = internal_hash(c_file.path_to_folder + file.Name())
+			c_file.path_to_win = c_file.path_to_smks + "win.smk"
+			hash_smk["win.smk"] = internal_hash(c_file.path_to_smks + file.Name())
 		}
 	}
 	if hash_smk["credits.smk"] != CREDITS_HASH ||
@@ -160,16 +149,14 @@ func check_smk() {
 }
 
 func create_dir() {
-	path := c_file.path_to_install + "\\data\\menu"
-
-	err := os.MkdirAll(path, 0700)
+	err := os.MkdirAll("C:\\Program Files\\DreamWorks Interactive\\Trespasser\\data\\menu\\", 0700)
 	if err != nil {
 		notify.Error(err.Error(), "patcher.create_dir()")
 	}
 }
 
 func copy_credits() {
-	dst, err := os.Create(c_file.path_to_install + "\\data\\menu\\credits.smk")
+	dst, err := os.Create("C:\\Program Files\\DreamWorks Interactive\\Trespasser\\data\\menu\\credits.smk")
 	if err != nil {
 		notify.Error(err.Error(), "patcher.copy_credits()")
 	}
@@ -182,7 +169,7 @@ func copy_credits() {
 	src.Close()
 }
 func copy_newgame() {
-	dst, err := os.Create(c_file.path_to_install + "\\data\\menu\\newgame.smk")
+	dst, err := os.Create("C:\\Program Files\\DreamWorks Interactive\\Trespasser\\data\\menu\\newgame.smk")
 	if err != nil {
 		notify.Error(err.Error(), "patcher.copy_newgame()")
 	}
@@ -195,7 +182,7 @@ func copy_newgame() {
 	src.Close()
 }
 func copy_tpassintro() {
-	dst, err := os.Create(c_file.path_to_install + "\\data\\menu\\tpassintro.smk")
+	dst, err := os.Create("C:\\Program Files\\DreamWorks Interactive\\Trespasser\\data\\menu\\tpassintro.smk")
 	if err != nil {
 		notify.Error(err.Error(), "patcher.copy_tpassintro()")
 	}
@@ -208,7 +195,7 @@ func copy_tpassintro() {
 	src.Close()
 }
 func copy_win() {
-	dst, err := os.Create(c_file.path_to_install + "\\data\\menu\\win.smk")
+	dst, err := os.Create("C:\\Program Files\\DreamWorks Interactive\\Trespasser\\data\\menu\\win.smk")
 	if err != nil {
 		notify.Error(err.Error(), "patcher.copy_win()")
 	}
@@ -221,18 +208,49 @@ func copy_win() {
 	src.Close()
 }
 
-func regedit() {
-	reg, err := registry.OpenKey(registry.LOCAL_MACHINE, `SOFTWARE\WOW6432Node\DreamWorks Interactive\Trespasser`, registry.WRITE)
-
+func copy_other() {
+	folder, err := os.Open(c_file.path_to_other)
 	if err != nil {
-		notify.Inform("Utilizing alternative path `SOFTWARE\\DreamWorks Interactive\\Trespasser`")
-		reg, err = registry.OpenKey(registry.LOCAL_MACHINE, `SOFTWARE\\DreamWorks Interactive\\Trespasser`, registry.WRITE) // Alternative path
-		if err != nil {
-			notify.Error(err.Error(), "patcher.regedit")
-		}
+		notify.Error(err.Error(), "patcher.copy_other()")
 	}
 
-	err = reg.SetStringValue("Data Drive", c_file.path_to_install+"\\")
+	files, err := folder.Readdir(0)
+	if err != nil {
+		notify.Error(err.Error(), "patcher.copy_other()")
+	}
+
+	if len(files) < 53 {
+		notify.Warning("Uncorrect amount of files. Cannot guarantee that the game will work with less files.")
+	}
+	if c_file.path_to_other[len(c_file.path_to_other)-1] != '/' {
+		c_file.path_to_other += "/"
+	}
+	for _, file := range files {
+		notify.Inform("Sub-phase] Copying '" + file.Name() + "'")
+
+		dst, err := os.Create("C:\\Program Files\\DreamWorks Interactive\\Trespasser\\data\\" + file.Name())
+		if err != nil {
+			notify.Error(err.Error(), "patcher.copy_other()")
+		}
+
+		src, err := os.Open(c_file.path_to_other + file.Name())
+		if err != nil {
+			notify.Error(err.Error(), "patcher.copy_other()")
+		}
+		io.Copy(dst, src)
+		dst.Close()
+		src.Close()
+	}
+}
+
+func regedit() {
+	reg, err := registry.OpenKey(registry.LOCAL_MACHINE, `SOFTWARE\\DreamWorks Interactive\\Trespasser`, registry.WRITE)
+
+	if err != nil {
+		notify.Error(err.Error(), "patcher.regedit")
+	}
+
+	err = reg.SetStringValue("Data Drive", "C:\\Program Files\\DreamWorks Interactive\\Trespasser\\")
 	if err != nil {
 		notify.Error(err.Error(), "patcher.regedit")
 	}
