@@ -1,4 +1,4 @@
-![The games art box](https://github.com/CrestFallenTurtle/No_CD_Cracks/blob/main/pictures/trespasser/Jp-trespasser-cover.png)
+![The games art box](../pictures/trespasser/Jp-trespasser-cover.png)
 
 ### Process to check if a disk is inserted
 The program tries to load a file from the disk with help of `fileapi.getFileAttributesA` the return value from the function if it fails is `INVALID_FILE_ATTRIBUTES`
